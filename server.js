@@ -10,9 +10,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Set server port
-HTTP_PORT = 5000;
+var HTTP_PORT = 5000;
 // Start server
-app.listen(HTTP_PORT, () => {
+const server = app.listen(HTTP_PORT, () => {
     console.log("Server running on port %PORT%".replace("%PORT%",HTTP_PORT))
 });
 // READ (HTTP method GET) at root endpoint /app/
@@ -25,9 +25,9 @@ app.get("/app/", (req, res, next) => {
 // CREATE a new user (HTTP method POST) at endpoint /app/new/
 app.post("/app/new/", (req, res) => {
 	const stmt = db.prepare("INSERT INTO userinfo (user, pass) VALUES (?, ?)");
-	const info = stmt.run();
-	res.status(201).json({"message": info.changes + " record created: ID "+ info.lastInsertRowid});
-})
+	const info = stmt.run(req.body.user, req.body.pass);
+	res.status(201).json("We made a new database entry.");
+});
 // READ a list of all users (HTTP method GET) at endpoint /app/users/
 app.get("/app/users", (req, res) => {	
 	const stmt = db.prepare("SELECT * FROM userinfo").all();
@@ -52,6 +52,12 @@ app.delete("/app/delete/user/:id", (req, res) => {
 })
 // Default response for any other request
 app.use(function(req, res){
-	res.json("Your API is Working!");
+	res.json({"message":"Endpoint not found. (404)"});
     res.status(404);
+});
+
+process.on('SIGTERM', () => {
+	server.close(() => {
+		console.log('Server stopped.');
+	});
 });
